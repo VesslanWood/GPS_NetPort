@@ -1,5 +1,7 @@
 package android_serialport_api.utils;
 
+
+
 /**
  * <p>文件描述：<p>
  * <p>作者：jambestwick<p>
