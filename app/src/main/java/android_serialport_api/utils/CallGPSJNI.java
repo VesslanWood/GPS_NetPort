@@ -18,5 +18,6 @@ package android_serialport_api.utils;
 //    //用native修饰本地方法
 //    public native long CalcBlockCRC32();
 //}
+//
 
 
