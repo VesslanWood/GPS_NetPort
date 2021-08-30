@@ -25,6 +25,11 @@ import android_serialport_api.utils.StringUtil;
 import android_serialport_api.utils.TimeUtil;
 import android_serialport_api.utils.LogUtil;
 
+
+/**
+ * 打点界面
+ *
+ * **/
 public class PointMainActivity extends SerialPortActivity {
     ProgressDialog progressDialog;
     private final static String TAG = "Point";
@@ -56,8 +61,6 @@ public class PointMainActivity extends SerialPortActivity {
                         long start = System.currentTimeMillis();
                         long now = start;
                         while (startPoint && now - start < 10 * 1000) {
-
-                            Log.d("www", ">>>" + now + ">>>" + start);
                             LogUtil.d(TAG, Thread.currentThread().getName() + ",>>>" + now + ">>>" + start);
                             try {
                                 Thread.sleep(10);
@@ -98,7 +101,6 @@ public class PointMainActivity extends SerialPortActivity {
                             LogUtil.e("pm", "file ===" + file.exists() + "===" + Environment
                                     .getExternalStorageDirectory().getAbsolutePath() + "/GPSPoint");
                             if (!file.exists()) {
-
                                 boolean b = file.mkdirs();
                                 LogUtil.e("pm", ">>>" + b);
                             }

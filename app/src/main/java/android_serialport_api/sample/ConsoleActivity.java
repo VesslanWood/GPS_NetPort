@@ -29,6 +29,7 @@ import android.widget.TextView;
 import java.io.IOException;
 
 import android_serialport_api.utils.ByteConvert;
+import android_serialport_api.utils.CommandUtil;
 import android_serialport_api.utils.GPSRespUtil;
 import android_serialport_api.utils.LogUtil;
 import android_serialport_api.utils.StringUtil;
@@ -74,34 +75,20 @@ public class ConsoleActivity extends SerialPortActivity implements CompoundButto
                         String str = Emission.getText().toString();
                         if (isHex) {
                             //byte[] strByte = toByteArray(str);
-                            byte[] strByte = new byte[5];
-                            strByte[0] = (byte) 0XBE;
-                            strByte[1] = (byte) 0XBE;
-                            strByte[2] = (byte) 0XBE;
-                            strByte[3] = (byte) 0XBE;
-                            strByte[4] = (byte) 0XBE;
-
-                            mOutputStream.write(strByte);
+                            byte[] command = CommandUtil.sendTest();
+                            mOutputStream.write(command);
                             mOutputStream.write('\n');
                             mOutputStream.flush();
-                            LogUtil.e("", ",发送结束1:" + ByteConvert.bytesToHex(strByte));
+                            LogUtil.e("", ",发送结束1:" + ByteConvert.bytesToHex(command));
 
                         } else {
                             //mOutputStream.write(Emission.getText().toString().getBytes());
-                            byte[] strByte = new byte[5];
-                            strByte[0] = (byte) 0XBE;
-                            strByte[1] = (byte) 0XBE;
-                            strByte[2] = (byte) 0XBE;
-                            strByte[3] = (byte) 0XBE;
-                            strByte[4] = (byte) 0XBE;
-
-                            mOutputStream.write(strByte);
+                            byte[] command = CommandUtil.sendTest();
+                            mOutputStream.write(command);
                             mOutputStream.write('\n');
                             mOutputStream.flush();
-                            LogUtil.e("", ",发送结束2:" + ByteConvert.bytesToHex(strByte));
+                            LogUtil.e("", ",发送结束2:" + ByteConvert.bytesToHex(command));
                         }
-
-                        //mOutputStream.write('\n');
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
