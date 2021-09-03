@@ -28,8 +28,7 @@ import android_serialport_api.utils.LogUtil;
 
 /**
  * 打点界面
- *
- * **/
+ **/
 public class PointMainActivity extends SerialPortActivity {
     ProgressDialog progressDialog;
     private final static String TAG = "Point";
@@ -183,8 +182,11 @@ public class PointMainActivity extends SerialPortActivity {
 
     @Override
     protected synchronized void onDataReceived(byte[] buffer, int size) {
+        String res = new String(buffer, 0, size);
+        res = StringUtil.replaceBlank(res).trim();
         try {
-            String[] s = new String(buffer, 0, size).split("\n");
+            String responseWithLine = StringUtil.addLineHeadByParams(res);
+            String[] s = responseWithLine.split("\r\n");
             if (s.length <= 0) {
                 return;
             }
@@ -244,35 +246,27 @@ public class PointMainActivity extends SerialPortActivity {
         }
     }
 
-    private void parseGpsStr(String s) {
+    private void parseGpsStr(String str) {
 
         final GPSInfo gpsInfo = new GPSInfo();
         boolean ggaGet = false;
-        String[] strs = s.split("\n");//换行截取数据
-        for (String str : strs) {
+        try {
             if (str.startsWith("$GPGGA")) {
-                try {
-                    String[] strtemp1 = str.split(",");
-                    if (strtemp1.length >= 7) {
-                        gpsInfo.ggaType = strtemp1[6];
-                    }
-
-                    if (TextUtils.isEmpty(gpsInfo.ggaType)) {
-                        gpsInfo.ggaType = "0";
-                    }
-                    if (strtemp1.length >= 6) {
-                        gpsInfo.latitude = strtemp1[2].equals("") ? 0 : Double.parseDouble(parseLat(strtemp1[2], strtemp1[3]));
-                        gpsInfo.longitude = strtemp1[4].equals("") ? 0 : Double.parseDouble(parseLon(strtemp1[4], strtemp1[5]));
-                    } else {
-                        gpsInfo.latitude = 0;
-                        gpsInfo.longitude = 0;
-                    }
-                    ggaGet = true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    LogUtil.e(TAG, Thread.currentThread().getName() + ",解析数据，parseGpsStr,Exception:" + Log.getStackTraceString(e));
-                    ggaGet = false;
+                String[] strtemp1 = str.split(",");
+                if (strtemp1.length >= 7) {
+                    gpsInfo.ggaType = strtemp1[6];
                 }
+                if (TextUtils.isEmpty(gpsInfo.ggaType)) {
+                    gpsInfo.ggaType = "0";
+                }
+                if (strtemp1.length >= 6) {
+                    gpsInfo.latitude = strtemp1[2].equals("") ? 0 : Double.parseDouble(parseLat(strtemp1[2], strtemp1[3]));
+                    gpsInfo.longitude = strtemp1[4].equals("") ? 0 : Double.parseDouble(parseLon(strtemp1[4], strtemp1[5]));
+                } else {
+                    gpsInfo.latitude = 0;
+                    gpsInfo.longitude = 0;
+                }
+                ggaGet = true;
             } else if (str.startsWith("$GPRMC")) {
                 String[] strtemp1 = str.split(",");
                 gpsInfo.gpsStatus = strtemp1[2];
@@ -281,7 +275,12 @@ public class PointMainActivity extends SerialPortActivity {
                 gpsInfo.longitude = strtemp1[5].equals("") ? 0 : Double.parseDouble(parseLon(strtemp1[5], strtemp1[6]));
                 ggaGet = true;
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            LogUtil.e(TAG, Thread.currentThread().getName() + ",解析数据，parseGpsStr,Exception:" + Log.getStackTraceString(e));
+            ggaGet = false;
         }
+
         final long now = System.currentTimeMillis();
 
 

@@ -23,4 +23,10 @@ public class StringUtil {
         return dest;
     }
 
+    public static String addLineHeadByParams(String origin, char... strs) {
+        String replaceEnter = replaceBlank(origin).trim();
+        String bcd = replaceEnter.replaceAll("\\$", "\r\n\\$");
+        String res = bcd.replaceAll("\\#", "\r\n\\#");
+        return res;
+    }
 }
