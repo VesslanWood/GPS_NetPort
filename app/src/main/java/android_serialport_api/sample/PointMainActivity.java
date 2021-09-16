@@ -8,6 +8,7 @@ import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,7 +30,7 @@ import android_serialport_api.utils.LogUtil;
 /**
  * 打点界面
  **/
-public class PointMainActivity extends SerialPortActivity {
+public class PointMainActivity extends NetPortActivity {
     ProgressDialog progressDialog;
     private final static String TAG = "Point";
 
@@ -37,6 +38,8 @@ public class PointMainActivity extends SerialPortActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_point_main);
+        initView();
+        initData();
         progressDialog = new ProgressDialog(PointMainActivity.this);
         progressDialog.setTitle("正在打点");
         findViewById(R.id.add).setOnClickListener(new View.OnClickListener() {
@@ -178,41 +181,12 @@ public class PointMainActivity extends SerialPortActivity {
         });
     }
 
-    private final StringBuilder receiveSb = new StringBuilder();
-
     @Override
-    protected void onDataReceived(byte[] buffer, int size) {
-        String res = new String(buffer, 0, size);
-        res = StringUtil.replaceBlank(res).trim();
-        try {
-            String responseWithLine = StringUtil.addLineHeadByParams(res);
-            String[] s = responseWithLine.split("\r\n");
-            if (s.length <= 0) {
-                return;
-            }
-            receiveSb.append(s[0]);
-            if (GPSRespUtil.isFullResp(receiveSb.toString())) {
-                String withOutFit = StringUtil.replaceBlank(receiveSb.toString());
-                if (withOutFit.substring(withOutFit.indexOf("*") + 1).length() < 2) {
-                    return;
-                }
-                if (withOutFit.contains("BESTPOSA")) {
-                    LogUtil.d("", ",收←◆" + withOutFit);
-                } else {
-                    LogUtil.d("", ",收←◆" + withOutFit + ",效验结果:" + GPSRespUtil.xorString(withOutFit));
-                }
-                parseGpsStr(withOutFit);
-                receiveSb.delete(0, receiveSb.length());
-            }
-            if (s.length > 1) {
-                receiveSb.append(s[1]);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            LogUtil.e(TAG, "onDataReceived Exception:" + Log.getStackTraceString(e));
-
-        }
+    void onDataReceive(byte[] readData) {
+        //GPSRespUtil.parseHoleData(readData);
     }
+
+    private final StringBuffer receiveSb = new StringBuffer();
 
     @Override
     public void onPointerCaptureChanged(boolean hasCapture) {
@@ -354,5 +328,24 @@ public class PointMainActivity extends SerialPortActivity {
                     ", Speed=" + speed +
                     "km/h, GGAType='" + ggaType + '\'';
         }
+    }
+
+    @Override
+    protected void initView() {
+        EditText etRoad = findViewById(R.id.road_num_et);
+        EditText etBerth = findViewById(R.id.editText);
+        EditText etTag = findViewById(R.id.editText1);
+        Button btnAdd = findViewById(R.id.add);
+        Button btnClear = findViewById(R.id.clear);
+        TextView tvGPS1 = findViewById(R.id.gps1);
+        TextView tvGPS2 = findViewById(R.id.gps2);
+        TextView tvGPS3 = findViewById(R.id.gps3);
+        TextView tvGPS4 = findViewById(R.id.gps4);
+
+    }
+
+    @Override
+    protected void initData() {
+        super.initData();
     }
 }

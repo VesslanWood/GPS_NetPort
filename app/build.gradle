@@ -50,4 +50,5 @@ dependencies {
     implementation 'com.android.support.constraint:constraint-layout:2.0.1'
     // 权限请求框架：https://github.com/getActivity/XXPermissions
     implementation 'com.github.getActivity:XXPermissions:12.0'
+    implementation 'com.github.jiusetian:EasySocket:2.1.1'
 }

@@ -29,4 +29,5 @@ public class StringUtil {
         String res = bcd.replaceAll("\\#", "\r\n\\#");
         return res;
     }
+
 }

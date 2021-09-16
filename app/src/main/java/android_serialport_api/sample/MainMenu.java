@@ -30,7 +30,6 @@ import com.hjq.permissions.XXPermissions;
 
 import java.util.List;
 
-import android_serialport_api.utils.GPSRespUtil;
 import android_serialport_api.utils.LogUtil;
 
 public class MainMenu extends Activity {
@@ -47,7 +46,7 @@ public class MainMenu extends Activity {
         final Button buttonSetup = (Button) findViewById(R.id.ButtonSetup);
         buttonSetup.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                startActivity(new Intent(MainMenu.this, SerialPortPreferences.class));
+                startActivity(new Intent(MainMenu.this, NetPortPreferences.class));
             }
         });
 
@@ -63,13 +62,6 @@ public class MainMenu extends Activity {
         buttonConsole.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 startActivity(new Intent(MainMenu.this, ConsoleActivity.class));
-            }
-        });
-
-        final Button buttonLoopback = (Button) findViewById(R.id.ButtonLoopback);
-        buttonLoopback.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                startActivity(new Intent(MainMenu.this, LoopbackActivity.class));
             }
         });
 
@@ -97,8 +89,6 @@ public class MainMenu extends Activity {
             }
         });
 
-        String[] strtemp1 = "$GPRMC,094155.50,A,3959.9923624,N,11627.2951788,E,0.141,167.7,270821,0.0,E,A*3D".split(",");
-       String bbb = strtemp1[7];
     }
 
 
