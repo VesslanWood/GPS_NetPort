@@ -181,7 +181,7 @@ public class PointMainActivity extends SerialPortActivity {
     private final StringBuilder receiveSb = new StringBuilder();
 
     @Override
-    protected synchronized void onDataReceived(byte[] buffer, int size) {
+    protected void onDataReceived(byte[] buffer, int size) {
         String res = new String(buffer, 0, size);
         res = StringUtil.replaceBlank(res).trim();
         try {
