@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android" android:title="Net port setup">
+    <ListPreference android:key="IP" android:title="IP" android:persistent="true"></ListPreference>
+    <ListPreference android:entries="@array/port_name" android:entryValues="@array/port_value" android:key="PORT" android:persistent="true" android:title="Port number"></ListPreference>
+</PreferenceScreen>

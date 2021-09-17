@@ -16,7 +16,9 @@
 
 package android_serialport_api.sample;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -26,6 +28,11 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.easysocket.EasySocket;
+import com.easysocket.entity.OriginReadData;
+import com.easysocket.entity.SocketAddress;
+import com.easysocket.interfaces.conn.ISocketActionListener;
+
 import java.io.IOException;
 
 import android_serialport_api.utils.ByteConvert;
@@ -34,23 +41,21 @@ import android_serialport_api.utils.GPSRespUtil;
 import android_serialport_api.utils.LogUtil;
 import android_serialport_api.utils.StringUtil;
 
-public class ConsoleActivity extends SerialPortActivity implements CompoundButton.OnCheckedChangeListener {
+public class ConsoleActivity extends NetPortActivity {
 
-    private static String TAG = ConsoleActivity.class.getName();
+    private static final String TAG = ConsoleActivity.class.getName();
 
     TextView mReception;
     EditText Emission;
     Button Send, Clear;
     CheckBox hexSend;
-    boolean isHex;
-    private StringBuilder receiveSb = new StringBuilder();
+    private final StringBuffer receiveSb = new StringBuffer();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.console);
-
-//		setTitle("Loopback test");
         mReception = (TextView) findViewById(R.id.EditTextReception);
         MyClickListener listener = new MyClickListener();
         Send = (Button) findViewById(R.id.Send);
@@ -60,41 +65,36 @@ public class ConsoleActivity extends SerialPortActivity implements CompoundButto
         Clear.setOnClickListener(listener);
         Send.setOnClickListener(listener);
         Emission = (EditText) findViewById(R.id.EditTextEmission);
-        hexSend = (CheckBox) findViewById(R.id.hex);
-        hexSend.setOnCheckedChangeListener(this);
+    }
 
+    @Override
+    void onDataReceive(byte[] readData) {
+        //GPSRespUtil.parseHoleData(readData, receiveSb);
+        runOnUiThread(() -> {
+            if (mReception != null) {
+                mReception.append(new String(readData));
+            }
+        });
     }
 
     class MyClickListener implements OnClickListener {
         Boolean thread_flag = true, PWM_flag = true, LASER_flag;
 
+        @SuppressLint("NonConstantResourceId")
         public void onClick(View v) {
             switch (v.getId()) {
                 case R.id.Send:
-                    try {
-                        String str = Emission.getText().toString();
-                        if (isHex) {
-                            //byte[] strByte = toByteArray(str);
-                            byte[] command = CommandUtil.sendTest();
-                            mOutputStream.write(command);
-                            mOutputStream.write('\n');
-                            mOutputStream.flush();
-                            LogUtil.e("", ",发送结束1:" + ByteConvert.bytesToHex(command));
-
-                        } else {
-                            //mOutputStream.write(Emission.getText().toString().getBytes());
-                            byte[] command = CommandUtil.sendTest();
-                            mOutputStream.write(command);
-                            mOutputStream.write('\n');
-                            mOutputStream.flush();
-                            LogUtil.e("", ",发送结束2:" + ByteConvert.bytesToHex(command));
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    String str = Emission.getText().toString();
+                    if (!TextUtils.isEmpty(str)) {
+                        byte[] command = ByteConvert.hexStringToBytes(str);
+                        EasySocket.getInstance().upMessage(command, NET_ADDRESS);
+                        LogUtil.e("", ",发送结束1:" + ByteConvert.bytesToHex(command));
+                    } else {
+                        byte[] command = CommandUtil.sendTest();
+                        EasySocket.getInstance().upMessage(command, NET_ADDRESS);
+                        LogUtil.e("", ",发送结束2:" + ByteConvert.bytesToHex(command));
                     }
-
                     break;
-
                 case R.id.Clear:
                     mReception.setText("");
                     Emission.setText("");
@@ -103,122 +103,6 @@ public class ConsoleActivity extends SerialPortActivity implements CompoundButto
                     break;
             }
         }
-    }
-
-    @Override
-    protected synchronized void onDataReceived(final byte[] buffer, final int size) {
-        try {
-            String[] s = new String(buffer, 0, size).split("\n");
-            if (s.length <= 0) {
-                return;
-            }
-            receiveSb.append(s[0]);
-            if (GPSRespUtil.isFullResp(receiveSb.toString())) {
-                String withOutFit = StringUtil.replaceBlank(receiveSb.toString());
-                if (withOutFit.substring(withOutFit.indexOf("*") + 1).length() < 2) {
-                    return;
-                }
-                if (withOutFit.contains("BESTPOSA")) {
-                    LogUtil.d("", ",收←◆" + withOutFit);
-                } else {
-                    LogUtil.d("", ",收←◆" + withOutFit + ",效验结果:" + GPSRespUtil.xorString(withOutFit));
-                }
-                receiveSb.delete(0, receiveSb.length());
-            }
-            if (s.length > 1) {
-                receiveSb.append(s[1]);
-            }
-            runOnUiThread(new Runnable() {
-                public void run() {
-                    if (mReception != null) {
-                        if (isHex) {
-                            mReception.append(toHexString(buffer, size));
-                        } else {
-                            mReception.append(new String(buffer, 0, size));
-                        }
-                    }
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-            LogUtil.e(TAG, "onDataReceived Exception:" + Log.getStackTraceString(e));
-        }
-    }
-
-    @Override
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        if (isChecked) {
-            isHex = true;
-        } else {
-            isHex = false;
-        }
-    }
-
-    /**
-     * 将String转化为byte[]数组
-     *
-     * @param arg 需要转换的String对象
-     * @return 转换后的byte[]数组
-     */
-    private byte[] toByteArray(String arg) {
-        if (arg != null) {
-            /* 1.先去除String中的' '，然后将String转换为char数组 */
-            char[] NewArray = new char[1000];
-            char[] array = arg.toCharArray();
-            int length = 0;
-            for (int i = 0; i < array.length; i++) {
-                if (array[i] != ' ') {
-                    NewArray[length] = array[i];
-                    length++;
-                }
-            }
-            /* 将char数组中的值转成一个实际的十进制数组 */
-            int EvenLength = (length % 2 == 0) ? length : length + 1;
-            if (EvenLength != 0) {
-                int[] data = new int[EvenLength];
-                data[EvenLength - 1] = 0;
-                for (int i = 0; i < length; i++) {
-                    if (NewArray[i] >= '0' && NewArray[i] <= '9') {
-                        data[i] = NewArray[i] - '0';
-                    } else if (NewArray[i] >= 'a' && NewArray[i] <= 'f') {
-                        data[i] = NewArray[i] - 'a' + 10;
-                    } else if (NewArray[i] >= 'A' && NewArray[i] <= 'F') {
-                        data[i] = NewArray[i] - 'A' + 10;
-                    }
-                }
-                /* 将 每个char的值每两个组成一个16进制数据 */
-                byte[] byteArray = new byte[EvenLength / 2];
-                for (int i = 0; i < EvenLength / 2; i++) {
-                    byteArray[i] = (byte) (data[i * 2] * 16 + data[i * 2 + 1]);
-                }
-                return byteArray;
-            }
-        }
-        return new byte[]{};
-    }
-
-    /**
-     * 将byte[]数组转化为String类型
-     *
-     * @param arg    需要转换的byte[]数组
-     * @param length 需要转换的数组长度
-     * @return 转换后的String队形
-     */
-    private String toHexString(byte[] arg, int length) {
-        String result = new String();
-        if (arg != null) {
-            for (int i = 0; i < length; i++) {
-                result = result
-                        + (Integer.toHexString(
-                        arg[i] < 0 ? arg[i] + 256 : arg[i]).length() == 1 ? "0"
-                        + Integer.toHexString(arg[i] < 0 ? arg[i] + 256
-                        : arg[i])
-                        : Integer.toHexString(arg[i] < 0 ? arg[i] + 256
-                        : arg[i])) + " ";
-            }
-            return result;
-        }
-        return "";
     }
 
 }

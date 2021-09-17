@@ -1,5 +1,8 @@
 package android_serialport_api.utils;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,5 +31,21 @@ public class StringUtil {
         String bcd = replaceEnter.replaceAll("\\$", "\r\n\\$");
         String res = bcd.replaceAll("\\#", "\r\n\\#");
         return res;
+    }
+
+    /**
+     * 求Map<K,V>中Value(值)的最大值
+     *
+     * @param map
+     * @return
+     */
+    public static Object getMaxValue(Map<Integer, Integer> map) {
+        if (map == null)
+            return null;
+        int length =map.size();
+        Collection<Integer> c = map.values();
+        Object[] obj = c.toArray();
+        Arrays.sort(obj);
+        return obj[length-1];
     }
 }
