@@ -16,13 +16,11 @@
 
 package android_serialport_api.sample;
 
-import java.io.IOException;
-import java.util.Arrays;
-
 import android.os.Bundle;
 
 import com.easysocket.EasySocket;
-import com.easysocket.interfaces.conn.ISocketActionListener;
+
+import java.util.Arrays;
 
 public class Sending01010101Activity extends NetPortActivity {
 
@@ -52,10 +50,10 @@ public class Sending01010101Activity extends NetPortActivity {
         public void run() {
             while (!isInterrupted()) {
                 try {
-                    EasySocket.getInstance().upMessage(mBuffer,NET_ADDRESS);
+                    EasySocket.getInstance().upMessage(mBuffer, NET_ADDRESS);
                 } catch (Exception e) {
                     e.printStackTrace();
-                    return;
+                    break;
                 }
             }
         }

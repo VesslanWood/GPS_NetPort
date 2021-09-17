@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Serial Port API sample</string>
+    <string name="app_name">Net Port Point sample</string>
     <string name="about_msg">
-Serial Port API sample v1.1\n
+Net Port API sample v1.1\n
 \n
 This program is the sample application provided with project android-serialport-api.\n
 \n
-More information and bug report on [http://code.google.com/p/android-serialport-api]\n
+More information and bug report on [https://github.com/jambestwick/GPS_SerialPort]\n
 \n
 Copyright 2010-2011 Cedric Priscal\n
 \n

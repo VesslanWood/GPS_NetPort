@@ -3,6 +3,7 @@ package android_serialport_api.utils;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,10 +43,29 @@ public class StringUtil {
     public static Object getMaxValue(Map<Integer, Integer> map) {
         if (map == null)
             return null;
-        int length =map.size();
+        int length = map.size();
         Collection<Integer> c = map.values();
         Object[] obj = c.toArray();
         Arrays.sort(obj);
-        return obj[length-1];
+        return obj[length - 1];
+    }
+
+    public static <K, V> K getMaxKey(Map<K, V> map) {
+        if (map == null)
+            return null;
+        int length = map.size();
+        Collection<V> c = map.values();
+        Object[] obj = c.toArray();
+        Arrays.sort(obj);
+        return getKeyByLoop(map, (V) obj[length - 1]);
+    }
+
+    private static <K, V> K getKeyByLoop(Map<K, V> map, V value) {
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            if (Objects.equals(entry.getValue(), value)) {
+                return entry.getKey();
+            }
+        }
+        return null;
     }
 }

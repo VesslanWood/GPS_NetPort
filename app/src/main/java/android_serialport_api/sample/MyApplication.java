@@ -17,12 +17,6 @@
 package android_serialport_api.sample;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.util.Log;
-
-import java.io.File;
-import java.io.IOException;
-import java.security.InvalidParameterException;
 
 import android_serialport_api.utils.CrashHandler;
 import android_serialport_api.utils.LogUtil;

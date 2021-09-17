@@ -15,10 +15,10 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
 
 import android_serialport_api.sample.bean.HighGpsObj;
 import android_serialport_api.utils.FileUtil;
@@ -39,13 +39,32 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
     private TextView tvGPS1, tvGPS2, tvGPS3;
     private final CopyOnWriteArrayList<HighGpsObj> gpsObjs = new CopyOnWriteArrayList<>();
     private final StringBuffer receiveSb = new StringBuffer();
+    private boolean onDestroy = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_point_main);
         initView();
-        initData();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        onDestroy = false;
+        timeCleanGpsList();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        onDestroy = true;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        onDestroy = true;
     }
 
     @Override
@@ -134,7 +153,7 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
                     return;
                 }
                 progressDialog.show();
-                new Thread(() -> {
+                Executors.newCachedThreadPool().execute(() -> {
                     gpsObjs.clear();
                     judgeListSize();
                     if (gpsObjs.size() > 0) {
@@ -161,13 +180,10 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
                     } else {
                         showPointFail();
                     }
-                }).start();
+                });
                 break;
             case R.id.clear:
-                File pointFile = new File(Constants.POINT_PATH);
-                if (pointFile.exists()) {
-                    pointFile.delete();
-                }
+                FileUtil.deleteFile(Constants.POINT_PATH);
                 Toast.makeText(PointMainActivity.this, "清除文件成功", Toast.LENGTH_LONG).show();
                 break;
 
@@ -198,7 +214,7 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
     }
 
     /**
-     * 循环获取点的长度
+     * 循环获取3个点的坐标，取平均值算精准
      **/
     private void judgeListSize() {
         long startCollectMillTime = System.currentTimeMillis();
@@ -272,7 +288,18 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
         progressDialog.setTitle("正在打点");
     }
 
-    @Override
-    protected void initData() {
+    protected void timeCleanGpsList() {
+        Executors.newCachedThreadPool().execute(() -> {
+            while (!onDestroy) {
+                if (gpsObjs.size() > 100) {//10Hz相当于10秒的数据
+                    gpsObjs.clear();
+                }
+                try {
+                    Thread.sleep(Constants.ONE_MILL_TIME);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 }
