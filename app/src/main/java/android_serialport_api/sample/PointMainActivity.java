@@ -1,5 +1,6 @@
 package android_serialport_api.sample;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -14,11 +15,15 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import android_serialport_api.sample.bean.HighGpsObj;
 import android_serialport_api.utils.FileUtil;
 import android_serialport_api.utils.GPSRespUtil;
+import android_serialport_api.utils.GPSUtil;
 import android_serialport_api.utils.LogUtil;
 import android_serialport_api.utils.StringUtil;
 import android_serialport_api.utils.TimeUtil;
@@ -29,8 +34,11 @@ import android_serialport_api.utils.TimeUtil;
  **/
 public class PointMainActivity extends NetPortActivity implements View.OnClickListener {
     ProgressDialog progressDialog;
-    private final static String TAG = "Point";
+    private final static String TAG = PointMainActivity.class.getName();
     private EditText etRoad, etBerth, etTag;
+    private TextView tvGPS1, tvGPS2, tvGPS3;
+    private final CopyOnWriteArrayList<HighGpsObj> gpsObjs = new CopyOnWriteArrayList<>();
+    private final StringBuffer receiveSb = new StringBuffer();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,16 +53,6 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
         parseHoleData(readData);
     }
 
-    private final StringBuffer receiveSb = new StringBuffer();
-
-    @Override
-    public void onPointerCaptureChanged(boolean hasCapture) {
-
-    }
-
-    private boolean startPoint;
-
-    private final CopyOnWriteArrayList<HighGpsObj> gpsObjs = new CopyOnWriteArrayList<>();
 
     private void parseHoleData(byte[] buffer) {
         String res = new String(buffer);
@@ -90,6 +88,7 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private void parseGpsStr(String str) {
         HighGpsObj gpsInfo = new HighGpsObj();
         try {
@@ -103,6 +102,11 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
                 gpsInfo.setLongitude(Math.abs(Double.parseDouble(GPSRespUtil.parseLat(tempGPGGA[4], tempGPGGA[5]))));
                 gpsInfo.setGgaType(Integer.parseInt(tempGPGGA[6]));
                 gpsObjs.add(gpsInfo);
+                runOnUiThread(() -> {
+                    tvGPS1.setText("经度:" + gpsInfo.getLongitude());
+                    tvGPS2.setText("纬度:" + gpsInfo.getLatitude());
+                    tvGPS3.setText("GGA状态:" + gpsInfo.getGgaType());
+                });
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -110,57 +114,6 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
         }
 
     }
-
-    final long now = System.currentTimeMillis();
-
-
-        if(!ggaGet)
-
-    {
-        return;
-    }
-//        if (now - lastUi < 200) {
-//            wwcutils.e(TAG, "当前时间:" + TimeUtil.long2Str(now, TimeUtil.DEFAULT_TIME_FORMAT_MS) + ",上一次时间:" + TimeUtil.long2Str(lastUi, TimeUtil.DEFAULT_TIME_FORMAT_MS));
-//            return;
-//        }
-        if(startPoint)
-
-    {
-        gga = "0";
-        gga = gpsInfo.ggaType;
-        if (gpsInfo.ggaType.equals("4")) {
-            pointGps.clear();
-            pointGps.add(gpsInfo);
-            pointGps.add(gpsInfo);
-            pointGps.add(gpsInfo);
-            startPoint = false;
-        } else if (gpsInfo.ggaType.equals("5")) {
-            pointGps.add(gpsInfo);
-        }
-        //wwcutils.e(TAG, Thread.currentThread().getName() + ",解析的数据,startPoint = " + startPoint + ", gga = " + gga + ", pointGps = " + pointGps);
-    }
-    //wwcutils.e(TAG, Thread.currentThread().getName() + ",解析的数据,startPoint = " + startPoint + ", gpsInfo = " + gpsInfo);
-    currentGps =gpsInfo;
-
-    runOnUiThread(new Runnable() {
-        @Override
-        public void run () {
-            lastUi = now;
-            TextView g1 = findViewById(R.id.gps1);
-            TextView g2 = findViewById(R.id.gps2);
-            TextView g3 = findViewById(R.id.gps3);
-            TextView g4 = findViewById(R.id.gps4);
-            g1.setText("经度:" + gpsInfo.longitude);
-            g2.setText("纬度:" + gpsInfo.latitude);
-            g3.setText("GGA状态:" + gpsInfo.ggaType);
-            g4.setText("速度:" + gpsInfo.speed + "km/h");
-
-
-        }
-    });
-
-}
-    private String gga = "0";
 
     @Override
     public void onClick(View v) {
@@ -175,76 +128,39 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
                     Toast.makeText(PointMainActivity.this, "请输入点", Toast.LENGTH_LONG).show();
                     return;
                 }
-                if (startPoint) {
+                String tagTxt = etTag.getText().toString();
+                if (TextUtils.isEmpty(tagTxt)) {
+                    Toast.makeText(PointMainActivity.this, "请输入标号", Toast.LENGTH_LONG).show();
                     return;
                 }
                 progressDialog.show();
                 new Thread(() -> {
                     gpsObjs.clear();
-                    startPoint = true;
-                    long start = System.currentTimeMillis();
-                    long now = start;
-                    while (startPoint && now - start < 10 * 1000) {
-                        LogUtil.d(TAG, Thread.currentThread().getName() + ",>>>" + now + ">>>" + start);
-                        try {
-                            Thread.sleep(10);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                    judgeListSize();
+                    if (gpsObjs.size() > 0) {
+                        HighGpsObj averageHighGpsObj = average(gpsObjs);
+                        if (averageHighGpsObj == null) {
+                            showPointFail();
+                            return;
                         }
-                        now = System.currentTimeMillis();
-                        if (gpsObjs.size() > 3) {
-                            startPoint = false;
-//                                break;
-                        }
-                    }
-                    int count = gpsObjs.size();
-                    LogUtil.e(TAG, Thread.currentThread().getName() + ",pointGps count =" + count + ",gga = " + gga);
-                    if (count > 0 && ("4".equals(gga) || "5".equals(gga))) {
-                        final String txtGga = gga;
-                        double lat = 0;
-                        double lon = 0;
-                        try {
-                            double latSum = 0;
-                            double lonSum = 0;
-                            for (HighGpsObj gpsInfo : gpsObjs) {
-                                latSum += gpsInfo.getLatitude();
-                                lonSum += gpsInfo.getLongitude();
-                            }
-                            lat = latSum / count;
-                            lon = lonSum / count;
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            LogUtil.e(TAG, e.getStackTrace());
-                        }
+                        String[] gdGps = GPSUtil.gps_To_GD(averageHighGpsObj.getLongitude(), averageHighGpsObj.getLongitude());
+                        double[] bdGps = GPSUtil.gps84_To_bd09(averageHighGpsObj.getLongitude(), averageHighGpsObj.getLongitude());
                         FileUtil.createOrExistsFile(Constants.POINT_PATH);
                         String msg = TimeUtil.date2Str(new Date(), TimeUtil.DEFAULT_TIME_FORMAT)
                                 + "," + roadTxt
-                                + "," + pointTxt
-                                + "," + lon
-                                + "," + lat
-                                + "," + gga;
-                        FileUtil.writeFileFromString(new File(Constants.POINT_PATH), msg, true);
-                        runOnUiThread(() -> {
-                            try {
-                                progressDialog.dismiss();
-                                Toast.makeText(PointMainActivity.this, "打点成功", Toast.LENGTH_LONG).show();
-                                etRoad.setText("");
-                                etBerth.setText("");
-                            } catch (Exception e) {
-                                LogUtil.e(TAG, Thread.currentThread().getName()+",打点失败:"+Log.getStackTraceString(e));
-                            }
-                        });
+                                + "," + pointTxt + "-" + tagTxt
+                                + "," + averageHighGpsObj.getLongitude()
+                                + "," + averageHighGpsObj.getLongitude()
+                                + "," + gdGps[0]
+                                + "," + gdGps[1]
+                                + "," + bdGps[1]
+                                + "," + bdGps[0]
+                                + "," + averageHighGpsObj.getGgaType();
+                        FileUtil.writeFileFromLineString(new File(Constants.POINT_PATH), msg, true);
+                        showPointSuccess();
                     } else {
-                        runOnUiThread(() -> {
-                            progressDialog.dismiss();
-                            AlertDialog alertDialog = new AlertDialog.Builder(PointMainActivity.this).create();
-                            alertDialog.setTitle("打点失败");
-                            alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "确定", (dialog, which) -> dialog.dismiss());
-                            alertDialog.show();
-                        });
+                        showPointFail();
                     }
-
-
                 }).start();
                 break;
             case R.id.clear:
@@ -252,12 +168,94 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
                 if (pointFile.exists()) {
                     pointFile.delete();
                 }
-                Toast.makeText(PointMainActivity.this, "清除成功", Toast.LENGTH_LONG).show();
+                Toast.makeText(PointMainActivity.this, "清除文件成功", Toast.LENGTH_LONG).show();
                 break;
 
             default:
                 break;
         }
+    }
+
+    private void showPointSuccess() {
+        runOnUiThread(() -> {
+            if (null != progressDialog && progressDialog.isShowing()) {
+                progressDialog.dismiss();
+            }
+            Toast.makeText(PointMainActivity.this, "打点成功", Toast.LENGTH_LONG).show();
+            etBerth.setText("");
+            etTag.setText("");
+        });
+    }
+
+    private void showPointFail() {
+        runOnUiThread(() -> {
+            progressDialog.dismiss();
+            AlertDialog alertDialog = new AlertDialog.Builder(PointMainActivity.this).create();
+            alertDialog.setTitle("打点失败");
+            alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "确定", (dialog, which) -> dialog.dismiss());
+            alertDialog.show();
+        });
+    }
+
+    /**
+     * 循环获取点的长度
+     **/
+    private void judgeListSize() {
+        long startCollectMillTime = System.currentTimeMillis();
+        while (gpsObjs.size() <= 3) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (System.currentTimeMillis() - startCollectMillTime > Constants.COLLECT_GPS_TIME_OUT) {
+                runOnUiThread(() -> Toast.makeText(PointMainActivity.this, "附近没有GPS有效信息", Toast.LENGTH_LONG).show());
+                LogUtil.d(TAG, Thread.currentThread().getName() + ",GPS,附近没有GPS信号");
+                break;
+            }
+        }
+    }
+
+    /**
+     * 计算多点的平均值
+     **/
+    private HighGpsObj average(CopyOnWriteArrayList<HighGpsObj> gpsObjs) {
+        HighGpsObj result = new HighGpsObj();
+        int count = gpsObjs.size();
+        double averageLat = 0d;
+        double averageLon = 0d;
+        long averageTs = 0L;
+        int maxGPSType = -1;
+        Map<Integer, Integer> gpsTypeMap = new ConcurrentHashMap<>();
+        try {
+            double latSum = 0d;
+            double lonSum = 0d;
+            long tsSum = 0L;
+            for (HighGpsObj gpsInfo : gpsObjs) {
+                latSum += gpsInfo.getLatitude();
+                lonSum += gpsInfo.getLongitude();
+                tsSum += gpsInfo.getTs();
+                int gpsType = gpsInfo.getGgaType();
+                if (gpsTypeMap.containsKey(gpsType)) {
+                    int next = gpsTypeMap.get(gpsType) + 1;
+                    gpsTypeMap.put(gpsType, next);
+                } else {
+                    gpsTypeMap.put(gpsType, 1);
+                }
+            }
+            maxGPSType = (int) StringUtil.getMaxValue(gpsTypeMap);
+            averageLat = latSum / count;
+            averageLon = lonSum / count;
+            averageTs = tsSum / count;
+        } catch (Exception e) {
+            LogUtil.e(TAG, Thread.currentThread().getName() + ",average:" + Log.getStackTraceString(e));
+            return null;
+        }
+        result.setLatitude(averageLat);
+        result.setLongitude(averageLon);
+        result.setTs(averageTs);
+        result.setGgaType(maxGPSType);
+        return result;
     }
 
     @Override
@@ -267,10 +265,9 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
         etTag = findViewById(R.id.editText1);
         Button btnAdd = findViewById(R.id.add);
         Button btnClear = findViewById(R.id.clear);
-        TextView tvGPS1 = findViewById(R.id.gps1);
-        TextView tvGPS2 = findViewById(R.id.gps2);
-        TextView tvGPS3 = findViewById(R.id.gps3);
-        TextView tvGPS4 = findViewById(R.id.gps4);
+        tvGPS1 = findViewById(R.id.gps1);
+        tvGPS2 = findViewById(R.id.gps2);
+        tvGPS3 = findViewById(R.id.gps3);
         progressDialog = new ProgressDialog(PointMainActivity.this);
         progressDialog.setTitle("正在打点");
     }

@@ -81,6 +81,9 @@ public class HighGpsObj implements Serializable {
         this.gpsTime = gpsTime;
     }
 
+
+
+
     @Override
     public String toString() {
         return "HighGpsObj{" +
