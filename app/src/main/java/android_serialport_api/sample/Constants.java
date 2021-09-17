@@ -1,5 +1,7 @@
 package android_serialport_api.sample;
 
+import android.os.Environment;
+
 /**
  * <p>文件描述：常量<p>
  * <p>作者：jambestwick<p>
@@ -10,5 +12,6 @@ package android_serialport_api.sample;
  */
 public class Constants {
     public static final String[] NET_IPS = new String[]{"172.23.100.151", "172.23.100.1", "192.168.0.151", "192.168.0.100"};
+    public static final String POINT_PATH = Environment.getExternalStorageDirectory().getAbsolutePath() + "/GPSPoint/" + "point.txt";
 
 }

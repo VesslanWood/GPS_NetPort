@@ -23,6 +23,7 @@ import android_serialport_api.sample.bean.HighGpsObj;
  */
 public class GPSRespUtil implements Serializable {
     private static final long serialVersionUID = -3605916896608969049L;
+    static long CRC32_POLYNOMIAL = 0xEDB88320L;
     private static final String TAG = GPSRespUtil.class.getName();
 
 
@@ -50,7 +51,22 @@ public class GPSRespUtil implements Serializable {
         if (!hasEnd(data)) {
             return false;
         }
-        return true;
+        //LogUtil.d(TAG, "GPS,有头有尾:" + data);
+        String subXor = data.substring(data.indexOf("*") + 1);
+        if (subXor.length() < 2) {
+            return false;
+        }
+        int tempHeadIndex = 0;
+        int indexJing = data.indexOf("#");
+        int indexDollar = data.indexOf("$");
+        tempHeadIndex = Math.max(indexJing, indexDollar);
+        int indexEnd = data.indexOf("*");
+        int indexLastEnd = data.lastIndexOf("*");
+        if (indexEnd == indexLastEnd) {
+            return indexEnd >= tempHeadIndex;
+        } else {
+            return indexLastEnd > tempHeadIndex;
+        }
     }
 
     public static boolean xorString(String origin) {
@@ -72,9 +88,6 @@ public class GPSRespUtil implements Serializable {
         String end = origin.substring(origin.indexOf("*") + 1);
         return xorHex.equalsIgnoreCase(end);
     }
-
-
-    static long CRC32_POLYNOMIAL = 0xEDB88320L;
 
     /* --------------------------------------------------------------------------
     Calculate a CRC value
@@ -110,7 +123,6 @@ ucBuff: Data block
         }
         return ulCRC;
     }
-
 
 
 
@@ -170,7 +182,7 @@ ucBuff: Data block
 
     }
 
-    private static String parseLat(String lat, String type) {
+    public static String parseLat(String lat, String type) {
         //纬度
         double latitude = Double.parseDouble(lat.substring(0, 2));
         latitude += Double.parseDouble(lat.substring(2)) / 60;

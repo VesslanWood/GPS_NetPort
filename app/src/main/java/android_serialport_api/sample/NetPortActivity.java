@@ -32,8 +32,7 @@ public abstract class NetPortActivity extends Activity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        initView();
-        initData();
+        initSocket();
     }
 
     private final ISocketActionListener socketActionListener = new ISocketActionListener() {
@@ -74,7 +73,7 @@ public abstract class NetPortActivity extends Activity {
     /**
      * 初始化网口GPS
      **/
-    protected void initSocket() {
+    private void initSocket() {
         // socket配置
         SharedPreferences sp = getSharedPreferences("android_serialport_api.sample_preferences", MODE_PRIVATE);
         String ip = sp.getString("IP", "");

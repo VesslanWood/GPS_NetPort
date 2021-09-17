@@ -56,7 +56,6 @@ public class ConsoleActivity extends NetPortActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.console);
-        initSocket();
         mReception = (TextView) findViewById(R.id.EditTextReception);
         MyClickListener listener = new MyClickListener();
         Send = (Button) findViewById(R.id.Send);
@@ -70,7 +69,7 @@ public class ConsoleActivity extends NetPortActivity {
 
     @Override
     void onDataReceive(byte[] readData) {
-        GPSRespUtil.parseHoleData(readData, receiveSb);
+        //GPSRespUtil.parseHoleData(readData, receiveSb);
         runOnUiThread(() -> {
             if (mReception != null) {
                 mReception.append(new String(readData));
