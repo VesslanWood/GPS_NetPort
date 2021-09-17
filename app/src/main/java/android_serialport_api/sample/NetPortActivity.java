@@ -54,6 +54,7 @@ public abstract class NetPortActivity extends Activity {
         @Override
         public void onSocketConnFail(SocketAddress socketAddress, boolean isNeedReconnect) {
             LogUtil.d(TAG, Thread.currentThread().getName() + ",GPS,onSocketConnFail");
+
             initSocket();
         }
 
@@ -108,10 +109,8 @@ public abstract class NetPortActivity extends Activity {
          * @param socketOptions
          * @return
          */
-        Executors.newCachedThreadPool().execute(() -> {
             EasySocket.getInstance().createSpecifyConnection(options, MyApplication.getContext());
             EasySocket.getInstance().subscribeSocketAction(socketActionListener, NET_ADDRESS);
-        });
 
     }
 
