@@ -15,10 +15,10 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
 
 import android_serialport_api.sample.bean.HighGpsObj;
 import android_serialport_api.utils.FileUtil;
@@ -38,14 +38,33 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
     private EditText etRoad, etBerth, etTag;
     private TextView tvGPS1, tvGPS2, tvGPS3;
     private final CopyOnWriteArrayList<HighGpsObj> gpsObjs = new CopyOnWriteArrayList<>();
-    private final StringBuffer receiveSb = new StringBuffer();
+    private StringBuffer receiveSb = new StringBuffer();
+    private boolean onDestroy = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_point_main);
         initView();
-        initData();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        onDestroy = false;
+        timeCleanGpsList();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        onDestroy = true;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        onDestroy = true;
     }
 
     @Override
@@ -62,55 +81,36 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
         try {
             s = responseWithLine.split("\r\n");
             receiveSb.append(s[0]);
-            if (GPSRespUtil.isFullResp(receiveSb.toString())) {
-                String withOutFit = receiveSb.toString();
-                receiveSb.delete(0, withOutFit.length());
-                parseGpsStr(withOutFit);
-            }
+            dealRespData();
             if (s.length > 1) {
                 receiveSb.append(s[1]);
-                if (GPSRespUtil.isFullResp(receiveSb.toString())) {
-                    String withOutFit = receiveSb.toString();
-                    receiveSb.delete(0, withOutFit.length());
-                    parseGpsStr(withOutFit);
-                }
+                dealRespData();
             }
-
         } catch (Exception e) {
             e.printStackTrace();
             LogUtil.d(TAG, ",GPS,onDataReceived,Exception:" + Log.getStackTraceString(e));
             receiveSb.delete(0, receiveSb.length());
-            if (null != s && s.length > 1) {
-                LogUtil.d(TAG, ",GPS,补到E后面:" + receiveSb.toString() + ",s数组长度:" + s.length);
-                receiveSb.append(s[1]);
-                LogUtil.d(TAG, ",GPS,补到E后面,结果:" + receiveSb.toString());
-            }
+        }
+    }
+
+    private void dealRespData() {
+        if (GPSRespUtil.isFullResp(receiveSb.toString())) {
+            String withOutFit = receiveSb.toString();
+            receiveSb.delete(0, withOutFit.length());
+            HighGpsObj highGpsObj = GPSRespUtil.parseGpsStr(withOutFit);
+            refreshView(highGpsObj);
         }
     }
 
     @SuppressLint("SetTextI18n")
-    private void parseGpsStr(String str) {
-        HighGpsObj gpsInfo = new HighGpsObj();
-        try {
-            if (str.contains("$GPGGA")) {
-                str = str.substring(str.indexOf("$GPGGA"));
-                boolean validOK = GPSRespUtil.xorString(str);
-                LogUtil.d(TAG, "GPS,解析,定位信息:" + str + "-->效验:" + validOK);
-                gpsInfo.setTs(System.currentTimeMillis());
-                String[] tempGPGGA = str.split(",");
-                gpsInfo.setLatitude(Math.abs(Double.parseDouble(GPSRespUtil.parseLat(tempGPGGA[2], tempGPGGA[3]))));
-                gpsInfo.setLongitude(Math.abs(Double.parseDouble(GPSRespUtil.parseLat(tempGPGGA[4], tempGPGGA[5]))));
-                gpsInfo.setGgaType(Integer.parseInt(tempGPGGA[6]));
-                gpsObjs.add(gpsInfo);
-                runOnUiThread(() -> {
-                    tvGPS1.setText("经度:" + gpsInfo.getLongitude());
-                    tvGPS2.setText("纬度:" + gpsInfo.getLatitude());
-                    tvGPS3.setText("GGA状态:" + gpsInfo.getGgaType());
-                });
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            LogUtil.d(TAG, Thread.currentThread().getName() + ",数据为空/有误:" + Log.getStackTraceString(e));
+    private void refreshView(HighGpsObj gpsInfo) {
+        if (null != gpsInfo) {
+            gpsObjs.add(gpsInfo);
+            runOnUiThread(() -> {
+                tvGPS1.setText("经度:" + gpsInfo.getLongitude());
+                tvGPS2.setText("纬度:" + gpsInfo.getLatitude());
+                tvGPS3.setText("GGA状态:" + gpsInfo.getGgaType());
+            });
         }
 
     }
@@ -134,7 +134,7 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
                     return;
                 }
                 progressDialog.show();
-                new Thread(() -> {
+                Executors.newCachedThreadPool().execute(() -> {
                     gpsObjs.clear();
                     judgeListSize();
                     if (gpsObjs.size() > 0) {
@@ -143,31 +143,28 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
                             showPointFail();
                             return;
                         }
-                        String[] gdGps = GPSUtil.gps_To_GD(averageHighGpsObj.getLongitude(), averageHighGpsObj.getLongitude());
-                        double[] bdGps = GPSUtil.gps84_To_bd09(averageHighGpsObj.getLongitude(), averageHighGpsObj.getLongitude());
-                        FileUtil.createOrExistsFile(Constants.POINT_PATH);
+                        String[] gdGps = GPSUtil.gps_To_GD(averageHighGpsObj.getLongitude(), averageHighGpsObj.getLatitude());
+                        double[] bdGps = GPSUtil.gps84_To_bd09(averageHighGpsObj.getLatitude(), averageHighGpsObj.getLongitude());
                         String msg = TimeUtil.date2Str(new Date(), TimeUtil.DEFAULT_TIME_FORMAT)
                                 + "," + roadTxt
                                 + "," + pointTxt + "-" + tagTxt
                                 + "," + averageHighGpsObj.getLongitude()
-                                + "," + averageHighGpsObj.getLongitude()
+                                + "," + averageHighGpsObj.getLatitude()
                                 + "," + gdGps[0]
                                 + "," + gdGps[1]
                                 + "," + bdGps[1]
                                 + "," + bdGps[0]
                                 + "," + averageHighGpsObj.getGgaType();
+                        FileUtil.createOrExistsFile(Constants.POINT_PATH);
                         FileUtil.writeFileFromLineString(new File(Constants.POINT_PATH), msg, true);
                         showPointSuccess();
                     } else {
                         showPointFail();
                     }
-                }).start();
+                });
                 break;
             case R.id.clear:
-                File pointFile = new File(Constants.POINT_PATH);
-                if (pointFile.exists()) {
-                    pointFile.delete();
-                }
+                FileUtil.deleteFile(Constants.POINT_PATH);
                 Toast.makeText(PointMainActivity.this, "清除文件成功", Toast.LENGTH_LONG).show();
                 break;
 
@@ -198,7 +195,7 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
     }
 
     /**
-     * 循环获取点的长度
+     * 循环获取3个点的坐标，取平均值算精准
      **/
     private void judgeListSize() {
         long startCollectMillTime = System.currentTimeMillis();
@@ -264,7 +261,9 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
         etBerth = findViewById(R.id.editText);
         etTag = findViewById(R.id.editText1);
         Button btnAdd = findViewById(R.id.add);
+        btnAdd.setOnClickListener(this);
         Button btnClear = findViewById(R.id.clear);
+        btnClear.setOnClickListener(this);
         tvGPS1 = findViewById(R.id.gps1);
         tvGPS2 = findViewById(R.id.gps2);
         tvGPS3 = findViewById(R.id.gps3);
@@ -272,7 +271,18 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
         progressDialog.setTitle("正在打点");
     }
 
-    @Override
-    protected void initData() {
+    protected void timeCleanGpsList() {
+        Executors.newCachedThreadPool().execute(() -> {
+            while (!onDestroy) {
+                if (gpsObjs.size() > 100) {//10Hz相当于10秒的数据
+                    gpsObjs.clear();
+                }
+                try {
+                    Thread.sleep(Constants.ONE_MILL_TIME);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 }

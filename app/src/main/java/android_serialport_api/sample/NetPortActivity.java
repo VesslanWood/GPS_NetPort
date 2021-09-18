@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.widget.Toast;
 
 import com.easysocket.EasySocket;
 import com.easysocket.config.EasySocketOptions;
@@ -12,9 +13,13 @@ import com.easysocket.entity.SocketAddress;
 import com.easysocket.interfaces.conn.ISocketActionListener;
 
 import java.security.InvalidParameterException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 
 import android_serialport_api.utils.GPSRespUtil;
 import android_serialport_api.utils.LogUtil;
+import android_serialport_api.utils.StringUtil;
 
 /**
  * <p>文件描述：网口抽象类<p>
@@ -27,12 +32,26 @@ import android_serialport_api.utils.LogUtil;
 public abstract class NetPortActivity extends Activity {
     public static final String TAG = NetPortActivity.class.getName();
 
-    protected static String NET_ADDRESS ;
+    protected static String NET_ADDRESS;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        initSocket();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Executors.newCachedThreadPool().execute(() -> {
+            try {
+                Thread.sleep(5000L);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            runOnUiThread(this::initSocket);
+
+        });
+
     }
 
     private final ISocketActionListener socketActionListener = new ISocketActionListener() {
@@ -44,7 +63,8 @@ public abstract class NetPortActivity extends Activity {
         @Override
         public void onSocketConnFail(SocketAddress socketAddress, boolean isNeedReconnect) {
             LogUtil.d(TAG, Thread.currentThread().getName() + ",GPS,onSocketConnFail");
-            initSocket();
+            //EasySocket.getInstance().destroyConnection(NET_ADDRESS);
+            //initSocket();
         }
 
         @Override
@@ -69,21 +89,25 @@ public abstract class NetPortActivity extends Activity {
     };
 
 
-
     /**
      * 初始化网口GPS
      **/
-    private void initSocket() {
+    protected void initSocket() {
         // socket配置
         SharedPreferences sp = getSharedPreferences("android_serialport_api.sample_preferences", MODE_PRIVATE);
         String ip = sp.getString("IP", "");
         int port = Integer.decode(sp.getString("PORT", "-1"));
         /* Check parameters */
         if ((ip.length() == 0) || (port == -1)) {
-            throw new InvalidParameterException();
+            Toast.makeText(this, "请先SETUP设置网络", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+            //throw new InvalidParameterException();
         }
-        LogUtil.w(TAG, "初始化网口-连接:" + ip + ":" + port);
-        NET_ADDRESS =ip + ":" + port;
+//        ip = "192.168.0.8";
+//        port = 8899;
+        LogUtil.w(TAG, Thread.currentThread().getName() + ",GPS,初始化网口-连接:" + ip + ":" + port);
+        NET_ADDRESS = ip + ":" + port;
         EasySocketOptions options = new EasySocketOptions.Builder()
                 // 主机地址，请填写自己的IP地址，以getString的方式是为了隐藏作者自己的IP地址
                 .setSocketAddress(new SocketAddress(ip, port))
@@ -97,17 +121,21 @@ public abstract class NetPortActivity extends Activity {
          * @return
          */
         EasySocket.getInstance().createSpecifyConnection(options, MyApplication.getContext());
-        EasySocket.getInstance().subscribeSocketAction(socketActionListener, ip + ":" + port);
+        EasySocket.getInstance().subscribeSocketAction(socketActionListener, NET_ADDRESS);
+
     }
 
     @Override
     protected void onDestroy() {
-        EasySocket.getInstance().destroyConnection(NET_ADDRESS);
         super.onDestroy();
+        if (null != NET_ADDRESS) {
+            EasySocket.getInstance().destroyConnection(NET_ADDRESS);
+        }
+
     }
 
     abstract void onDataReceive(byte[] readData);
 
-    protected void initView(){};
-    protected void initData(){};
+    protected void initView() {
+    }
 }

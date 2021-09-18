@@ -17,12 +17,6 @@
 package android_serialport_api.sample;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.util.Log;
-
-import java.io.File;
-import java.io.IOException;
-import java.security.InvalidParameterException;
 
 import android_serialport_api.utils.CrashHandler;
 import android_serialport_api.utils.LogUtil;
@@ -40,8 +34,7 @@ public class MyApplication extends android.app.Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        LogUtil.e(TAG, "MyApplication onCreate");
-        CrashHandler.getInstance().init(this);
+        //LogUtil.e(TAG, "MyApplication onCreate");
         mContext = this;
     }
 

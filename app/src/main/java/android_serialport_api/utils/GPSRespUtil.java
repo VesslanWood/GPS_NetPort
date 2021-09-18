@@ -123,43 +123,8 @@ ucBuff: Data block
         }
         return ulCRC;
     }
-
-
-
-    public static void parseHoleData(final byte[] buffer, StringBuffer receiveSb) {
-        String res = new String(buffer);
-        LogUtil.d(TAG, "收←◆" + res);
-        String responseWithLine = StringUtil.addLineHeadByParams(res).trim();
-        String[] s = null;
-        try {
-            s = responseWithLine.split("\r\n");
-            receiveSb.append(s[0]);
-            if (GPSRespUtil.isFullResp(receiveSb.toString())) {
-                String withOutFit = receiveSb.toString();
-                receiveSb.delete(0, withOutFit.length());
-                parseGpsStr(withOutFit);
-            }
-            if (s.length > 1) {
-                receiveSb.append(s[1]);
-                if (GPSRespUtil.isFullResp(receiveSb.toString())) {
-                    String withOutFit = receiveSb.toString();
-                    receiveSb.delete(0, withOutFit.length());
-                    parseGpsStr(withOutFit);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            LogUtil.d(TAG, ",GPS,onDataReceived,Exception:" + Log.getStackTraceString(e));
-            receiveSb.delete(0, receiveSb.length());
-            if (null != s && s.length > 1) {
-                LogUtil.d(TAG, ",GPS,补到E后面:" + receiveSb.toString() + ",s数组长度:" + s.length);
-                receiveSb.append(s[1]);
-                LogUtil.d(TAG, ",GPS,补到E后面,结果:" + receiveSb.toString());
-            }
-        }
-    }
-
-    private static void parseGpsStr(String str) {
+    
+    public static HighGpsObj parseGpsStr(String str) {
         HighGpsObj gpsInfo = new HighGpsObj();
         try {
             if (str.contains("$GPGGA")) {
@@ -171,14 +136,12 @@ ucBuff: Data block
                 gpsInfo.setLatitude(Math.abs(Double.parseDouble(parseLat(tempGPGGA[2], tempGPGGA[3]))));
                 gpsInfo.setLongitude(Math.abs(Double.parseDouble(parseLon(tempGPGGA[4], tempGPGGA[5]))));
                 gpsInfo.setGgaType(Integer.parseInt(tempGPGGA[6]));
-            } else if (str.contains("$GPRMC")) {
-                str = str.substring(str.indexOf("$GPRMC"));
-                LogUtil.d(TAG, "GPS,解析,速度信息:" + str);
-                String[] tempGPRMC = str.split(",");
+                return gpsInfo;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return null;
 
     }
 

@@ -22,35 +22,21 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 
 import com.easysocket.EasySocket;
-import com.easysocket.entity.OriginReadData;
-import com.easysocket.entity.SocketAddress;
-import com.easysocket.interfaces.conn.ISocketActionListener;
-
-import java.io.IOException;
 
 import android_serialport_api.utils.ByteConvert;
 import android_serialport_api.utils.CommandUtil;
-import android_serialport_api.utils.GPSRespUtil;
 import android_serialport_api.utils.LogUtil;
-import android_serialport_api.utils.StringUtil;
 
 public class ConsoleActivity extends NetPortActivity {
 
     private static final String TAG = ConsoleActivity.class.getName();
 
-    TextView mReception;
-    EditText Emission;
-    Button Send, Clear;
-    CheckBox hexSend;
-    private final StringBuffer receiveSb = new StringBuffer();
-
+    private TextView mReception;
+    private EditText Emission;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,12 +44,8 @@ public class ConsoleActivity extends NetPortActivity {
         setContentView(R.layout.console);
         mReception = (TextView) findViewById(R.id.EditTextReception);
         MyClickListener listener = new MyClickListener();
-        Send = (Button) findViewById(R.id.Send);
-        Clear = (Button) findViewById(R.id.Clear);
-        Send.setText("Send");
-        Clear.setText("Clear");
-        Clear.setOnClickListener(listener);
-        Send.setOnClickListener(listener);
+        findViewById(R.id.Send).setOnClickListener(listener);
+        findViewById(R.id.Clear).setOnClickListener(listener);
         Emission = (EditText) findViewById(R.id.EditTextEmission);
     }
 
@@ -78,21 +60,23 @@ public class ConsoleActivity extends NetPortActivity {
     }
 
     class MyClickListener implements OnClickListener {
-        Boolean thread_flag = true, PWM_flag = true, LASER_flag;
-
         @SuppressLint("NonConstantResourceId")
         public void onClick(View v) {
             switch (v.getId()) {
                 case R.id.Send:
                     String str = Emission.getText().toString();
-                    if (!TextUtils.isEmpty(str)) {
-                        byte[] command = ByteConvert.hexStringToBytes(str);
-                        EasySocket.getInstance().upMessage(command, NET_ADDRESS);
-                        LogUtil.e("", ",发送结束1:" + ByteConvert.bytesToHex(command));
-                    } else {
-                        byte[] command = CommandUtil.sendTest();
-                        EasySocket.getInstance().upMessage(command, NET_ADDRESS);
-                        LogUtil.e("", ",发送结束2:" + ByteConvert.bytesToHex(command));
+                    try {
+                        if (!TextUtils.isEmpty(str)) {
+                            byte[] command = ByteConvert.hexStringToBytes(str);
+                            EasySocket.getInstance().upMessage(command, NET_ADDRESS);
+                            LogUtil.d("", ",发送结束1:" + ByteConvert.bytesToHex(command));
+                        } else {
+                            byte[] command = CommandUtil.sendTest();
+                            EasySocket.getInstance().upMessage(command, NET_ADDRESS);
+                            LogUtil.d("", ",发送结束2:" + ByteConvert.bytesToHex(command));
+                        }
+                    } catch (Exception e) {
+                        LogUtil.d(TAG, Thread.currentThread().getName() + ",GPS,发送异常:" + Log.getStackTraceString(e));
                     }
                     break;
                 case R.id.Clear:

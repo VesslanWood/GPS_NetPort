@@ -21,6 +21,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -28,11 +29,16 @@ import android.widget.Toast;
 import com.hjq.permissions.OnPermissionCallback;
 import com.hjq.permissions.XXPermissions;
 
+import java.io.File;
+import java.util.Date;
 import java.util.List;
 
+import android_serialport_api.utils.CrashHandler;
+import android_serialport_api.utils.FileUtil;
 import android_serialport_api.utils.LogUtil;
+import android_serialport_api.utils.TimeUtil;
 
-public class MainMenu extends Activity {
+public class MainMenu extends FragmentActivity {
 
     /**
      * Called when the activity is first created.
@@ -41,85 +47,41 @@ public class MainMenu extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-
+        findViewById(R.id.ButtonSetup).setOnClickListener(v -> startActivity(new Intent(MainMenu.this, NetPortPreferences.class)));
+        findViewById(R.id.point).setOnClickListener(v -> startActivity(new Intent(MainMenu.this, PointMainActivity.class)));
+        findViewById(R.id.ButtonConsole).setOnClickListener(v -> startActivity(new Intent(MainMenu.this, ConsoleActivity.class)));
+        findViewById(R.id.Button01010101).setOnClickListener(v -> startActivity(new Intent(MainMenu.this, Sending01010101Activity.class)));
+        findViewById(R.id.ButtonAbout).setOnClickListener(v -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainMenu.this);
+            builder.setTitle("About");
+            builder.setMessage(R.string.about_msg);
+            builder.show();
+        });
+        findViewById(R.id.ButtonQuit).setOnClickListener(v -> MainMenu.this.finish());
         providePermissions();
-        final Button buttonSetup = (Button) findViewById(R.id.ButtonSetup);
-        buttonSetup.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                startActivity(new Intent(MainMenu.this, NetPortPreferences.class));
-            }
-        });
-
-
-        final Button buttonPoint = (Button) findViewById(R.id.point);
-        buttonPoint.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                startActivity(new Intent(MainMenu.this, PointMainActivity.class));
-            }
-        });
-
-        final Button buttonConsole = (Button) findViewById(R.id.ButtonConsole);
-        buttonConsole.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                startActivity(new Intent(MainMenu.this, ConsoleActivity.class));
-            }
-        });
-
-        final Button button01010101 = (Button) findViewById(R.id.Button01010101);
-        button01010101.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                startActivity(new Intent(MainMenu.this, Sending01010101Activity.class));
-            }
-        });
-
-        final Button buttonAbout = (Button) findViewById(R.id.ButtonAbout);
-        buttonAbout.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainMenu.this);
-                builder.setTitle("About");
-                builder.setMessage(R.string.about_msg);
-                builder.show();
-            }
-        });
-
-        final Button buttonQuit = (Button) findViewById(R.id.ButtonQuit);
-        buttonQuit.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                MainMenu.this.finish();
-            }
-        });
-
     }
 
 
+    /**
+     * 授权APP所需要的所有权限
+     **/
     private void providePermissions() {
-
         String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE// 写入权限
                 , Manifest.permission.READ_EXTERNAL_STORAGE // 读取权限
                 , Manifest.permission.READ_PHONE_STATE//手机状态权限
                 , Manifest.permission.ACCESS_FINE_LOCATION//定位权限
                 , Manifest.permission.ACCESS_COARSE_LOCATION//WIFI定位
+                , Manifest.permission.INTERNET
         };
         XXPermissions.with(MainMenu.this)
-                // 申请安装包权限
-                //.permission(Permission.REQUEST_INSTALL_PACKAGES)
-                // 申请悬浮窗权限
-                //.permission(Permission.SYSTEM_ALERT_WINDOW)
-                // 申请通知栏权限
-                //.permission(Permission.NOTIFICATION_SERVICE)
-                // 申请系统设置权限
-                //.permission(Permission.WRITE_SETTINGS)
-                // 申请单个权限
                 .permission(permissions)
-                // 申请多个权限
                 .request(new OnPermissionCallback() {
-
                     @Override
                     public void onGranted(List<String> permissions, boolean all) {
                         if (all) {
                             Toast.makeText(MainMenu.this, "获取读写权限成功", Toast.LENGTH_SHORT).show();
-                            LogUtil.d("MainMenu", Thread.currentThread().getName() + ",当前的版本:" + BuildConfig.VERSION_NAME);
-
+                            CrashHandler.getInstance().init(MyApplication.getContext());
+                            //LogUtil.d("MainMenu", Thread.currentThread().getName() + ",当前的版本:" + BuildConfig.VERSION_NAME);
                         } else {
                             Toast.makeText(MainMenu.this, "获取部分权限成功，但部分权限未正常授予", Toast.LENGTH_SHORT).show();
                         }
@@ -129,7 +91,6 @@ public class MainMenu extends Activity {
                     public void onDenied(List<String> permissions, boolean never) {
                         if (never) {
                             Toast.makeText(MainMenu.this, "被永久拒绝授权，请手动授予读写权限", Toast.LENGTH_SHORT).show();
-                            // 如果是被永久拒绝就跳转到应用权限系统设置页面
                             XXPermissions.startPermissionActivity(MainMenu.this, permissions);
                         } else {
                             Toast.makeText(MainMenu.this, "获取读写权限失败", Toast.LENGTH_SHORT).show();
