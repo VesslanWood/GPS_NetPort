@@ -34,8 +34,7 @@ public class MyApplication extends android.app.Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        LogUtil.e(TAG, "MyApplication onCreate");
-        CrashHandler.getInstance().init(this);
+        //LogUtil.e(TAG, "MyApplication onCreate");
         mContext = this;
     }
 

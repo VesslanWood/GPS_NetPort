@@ -21,6 +21,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -28,11 +29,16 @@ import android.widget.Toast;
 import com.hjq.permissions.OnPermissionCallback;
 import com.hjq.permissions.XXPermissions;
 
+import java.io.File;
+import java.util.Date;
 import java.util.List;
 
+import android_serialport_api.utils.CrashHandler;
+import android_serialport_api.utils.FileUtil;
 import android_serialport_api.utils.LogUtil;
+import android_serialport_api.utils.TimeUtil;
 
-public class MainMenu extends Activity {
+public class MainMenu extends FragmentActivity {
 
     /**
      * Called when the activity is first created.
@@ -41,7 +47,6 @@ public class MainMenu extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        providePermissions();
         findViewById(R.id.ButtonSetup).setOnClickListener(v -> startActivity(new Intent(MainMenu.this, NetPortPreferences.class)));
         findViewById(R.id.point).setOnClickListener(v -> startActivity(new Intent(MainMenu.this, PointMainActivity.class)));
         findViewById(R.id.ButtonConsole).setOnClickListener(v -> startActivity(new Intent(MainMenu.this, ConsoleActivity.class)));
@@ -53,7 +58,7 @@ public class MainMenu extends Activity {
             builder.show();
         });
         findViewById(R.id.ButtonQuit).setOnClickListener(v -> MainMenu.this.finish());
-
+        providePermissions();
     }
 
 
@@ -66,6 +71,7 @@ public class MainMenu extends Activity {
                 , Manifest.permission.READ_PHONE_STATE//手机状态权限
                 , Manifest.permission.ACCESS_FINE_LOCATION//定位权限
                 , Manifest.permission.ACCESS_COARSE_LOCATION//WIFI定位
+                , Manifest.permission.INTERNET
         };
         XXPermissions.with(MainMenu.this)
                 .permission(permissions)
@@ -74,7 +80,8 @@ public class MainMenu extends Activity {
                     public void onGranted(List<String> permissions, boolean all) {
                         if (all) {
                             Toast.makeText(MainMenu.this, "获取读写权限成功", Toast.LENGTH_SHORT).show();
-                            LogUtil.d("MainMenu", Thread.currentThread().getName() + ",当前的版本:" + BuildConfig.VERSION_NAME);
+                            CrashHandler.getInstance().init(MyApplication.getContext());
+                            //LogUtil.d("MainMenu", Thread.currentThread().getName() + ",当前的版本:" + BuildConfig.VERSION_NAME);
                         } else {
                             Toast.makeText(MainMenu.this, "获取部分权限成功，但部分权限未正常授予", Toast.LENGTH_SHORT).show();
                         }

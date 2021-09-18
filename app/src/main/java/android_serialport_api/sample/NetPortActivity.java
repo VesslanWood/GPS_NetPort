@@ -42,7 +42,16 @@ public abstract class NetPortActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        initSocket();
+        Executors.newCachedThreadPool().execute(() -> {
+            try {
+                Thread.sleep(5000L);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            runOnUiThread(this::initSocket);
+
+        });
+
     }
 
     private final ISocketActionListener socketActionListener = new ISocketActionListener() {
@@ -54,8 +63,8 @@ public abstract class NetPortActivity extends Activity {
         @Override
         public void onSocketConnFail(SocketAddress socketAddress, boolean isNeedReconnect) {
             LogUtil.d(TAG, Thread.currentThread().getName() + ",GPS,onSocketConnFail");
-
-            initSocket();
+            //EasySocket.getInstance().destroyConnection(NET_ADDRESS);
+            //initSocket();
         }
 
         @Override
@@ -95,6 +104,8 @@ public abstract class NetPortActivity extends Activity {
             return;
             //throw new InvalidParameterException();
         }
+//        ip = "192.168.0.8";
+//        port = 8899;
         LogUtil.w(TAG, Thread.currentThread().getName() + ",GPS,初始化网口-连接:" + ip + ":" + port);
         NET_ADDRESS = ip + ":" + port;
         EasySocketOptions options = new EasySocketOptions.Builder()
@@ -109,8 +120,8 @@ public abstract class NetPortActivity extends Activity {
          * @param socketOptions
          * @return
          */
-            EasySocket.getInstance().createSpecifyConnection(options, MyApplication.getContext());
-            EasySocket.getInstance().subscribeSocketAction(socketActionListener, NET_ADDRESS);
+        EasySocket.getInstance().createSpecifyConnection(options, MyApplication.getContext());
+        EasySocket.getInstance().subscribeSocketAction(socketActionListener, NET_ADDRESS);
 
     }
 
