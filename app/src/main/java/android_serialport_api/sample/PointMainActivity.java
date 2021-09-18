@@ -143,13 +143,13 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
                             showPointFail();
                             return;
                         }
-                        String[] gdGps = GPSUtil.gps_To_GD(averageHighGpsObj.getLongitude(), averageHighGpsObj.getLongitude());
-                        double[] bdGps = GPSUtil.gps84_To_bd09(averageHighGpsObj.getLongitude(), averageHighGpsObj.getLongitude());
+                        String[] gdGps = GPSUtil.gps_To_GD(averageHighGpsObj.getLongitude(), averageHighGpsObj.getLatitude());
+                        double[] bdGps = GPSUtil.gps84_To_bd09(averageHighGpsObj.getLatitude(), averageHighGpsObj.getLongitude());
                         String msg = TimeUtil.date2Str(new Date(), TimeUtil.DEFAULT_TIME_FORMAT)
                                 + "," + roadTxt
                                 + "," + pointTxt + "-" + tagTxt
                                 + "," + averageHighGpsObj.getLongitude()
-                                + "," + averageHighGpsObj.getLongitude()
+                                + "," + averageHighGpsObj.getLatitude()
                                 + "," + gdGps[0]
                                 + "," + gdGps[1]
                                 + "," + bdGps[1]
@@ -261,7 +261,9 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
         etBerth = findViewById(R.id.editText);
         etTag = findViewById(R.id.editText1);
         Button btnAdd = findViewById(R.id.add);
+        btnAdd.setOnClickListener(this);
         Button btnClear = findViewById(R.id.clear);
+        btnClear.setOnClickListener(this);
         tvGPS1 = findViewById(R.id.gps1);
         tvGPS2 = findViewById(R.id.gps2);
         tvGPS3 = findViewById(R.id.gps3);
