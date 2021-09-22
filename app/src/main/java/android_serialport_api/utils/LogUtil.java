@@ -11,7 +11,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Created by 张洪兴 on 2018/12/3 0003.
+ * 日志工具,包含文件打印
+ * Created by jambestwick on 2018/12/3 0003.
  */
 
 public class LogUtil {

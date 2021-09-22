@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
  */
 
 public class StringUtil {
+
     public static String replaceBlank(String str) {
         String dest = "";
         if (str != null) {
@@ -26,7 +27,9 @@ public class StringUtil {
         }
         return dest;
     }
-
+    /**
+     * 对$、#增加换行头
+     * */
     public static String addLineHeadByParams(String origin, char... strs) {
         String replaceEnter = replaceBlank(origin).trim();
         String bcd = replaceEnter.replaceAll("\\$", "\r\n\\$");

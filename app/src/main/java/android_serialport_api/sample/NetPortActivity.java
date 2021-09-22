@@ -39,6 +39,9 @@ public abstract class NetPortActivity extends Activity {
         super.onCreate(savedInstanceState);
     }
 
+    /**
+     * 单一实例Socket,子类集成 onResume，切勿调用   super.onResume()导致多个Socket实例    *
+     **/
     @Override
     protected void onResume() {
         super.onResume();
