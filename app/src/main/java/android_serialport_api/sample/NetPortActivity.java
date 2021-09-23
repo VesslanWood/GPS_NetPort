@@ -40,14 +40,14 @@ public abstract class NetPortActivity extends Activity {
     }
 
     /**
-     * 单一实例Socket,子类集成 onResume，切勿调用   super.onResume()导致多个Socket实例    *
+     * 抽象类单一实例Socket,子类集成 onResume，切勿调用   super.onResume()导致多个Socket实例    *
      **/
     @Override
     protected void onResume() {
         super.onResume();
         Executors.newCachedThreadPool().execute(() -> {
             try {
-                Thread.sleep(5000L);
+                Thread.sleep(5000L);//为GPS接收器初始化增加时间
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -105,10 +105,7 @@ public abstract class NetPortActivity extends Activity {
             Toast.makeText(this, "请先SETUP设置网络", Toast.LENGTH_LONG).show();
             finish();
             return;
-            //throw new InvalidParameterException();
         }
-//        ip = "192.168.0.8";
-//        port = 8899;
         LogUtil.w(TAG, Thread.currentThread().getName() + ",GPS,初始化网口-连接:" + ip + ":" + port);
         NET_ADDRESS = ip + ":" + port;
         EasySocketOptions options = new EasySocketOptions.Builder()
