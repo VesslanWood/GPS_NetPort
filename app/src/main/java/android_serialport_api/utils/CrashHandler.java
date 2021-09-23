@@ -15,6 +15,10 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 崩溃日志处理
+ *
+ * **/
 public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
     //文件夹目录

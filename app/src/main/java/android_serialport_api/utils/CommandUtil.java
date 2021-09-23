@@ -1,7 +1,7 @@
 package android_serialport_api.utils;
 
 /**
- * <p>文件描述：<p>
+ * <p>文件描述：单一测试指令类<p>
  * <p>作者：jambestwick<p>
  * <p>创建时间：2021/8/30<p>
  * <p>更新时间：2021/8/30<p>

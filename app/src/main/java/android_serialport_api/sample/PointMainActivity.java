@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 
+import android_serialport_api.sample.bean.GPSType;
 import android_serialport_api.sample.bean.HighGpsObj;
 import android_serialport_api.utils.FileUtil;
 import android_serialport_api.utils.GPSRespUtil;
@@ -105,7 +106,9 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
     @SuppressLint("SetTextI18n")
     private void refreshView(HighGpsObj gpsInfo) {
         if (null != gpsInfo) {
-            gpsObjs.add(gpsInfo);
+            if (gpsInfo.getGgaType() == GPSType.FIXED_SOLVE.getKey()) {
+                gpsObjs.add(gpsInfo);
+            }
             runOnUiThread(() -> {
                 tvGPS1.setText("经度:" + gpsInfo.getLongitude());
                 tvGPS2.setText("纬度:" + gpsInfo.getLatitude());
