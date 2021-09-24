@@ -141,7 +141,7 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
                     gpsObjs.clear();
                     judgeListSize();
                     if (gpsObjs.size() > 0) {
-                        HighGpsObj averageHighGpsObj = average(gpsObjs);
+                        HighGpsObj averageHighGpsObj = gpsObjs.get(0);
                         if (averageHighGpsObj == null) {
                             showPointFail();
                             return;
@@ -202,7 +202,7 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
      **/
     private void judgeListSize() {
         long startCollectMillTime = System.currentTimeMillis();
-        while (gpsObjs.size() <= 3) {
+        while (gpsObjs.size() <= 0) {
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
@@ -216,47 +216,6 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
         }
     }
 
-    /**
-     * 计算多点的平均值
-     **/
-    private HighGpsObj average(CopyOnWriteArrayList<HighGpsObj> gpsObjs) {
-        HighGpsObj result = new HighGpsObj();
-        int count = gpsObjs.size();
-        double averageLat = 0d;
-        double averageLon = 0d;
-        long averageTs = 0L;
-        int maxGPSType = -1;
-        Map<Integer, Integer> gpsTypeMap = new ConcurrentHashMap<>();
-        try {
-            double latSum = 0d;
-            double lonSum = 0d;
-            long tsSum = 0L;
-            for (HighGpsObj gpsInfo : gpsObjs) {
-                latSum += gpsInfo.getLatitude();
-                lonSum += gpsInfo.getLongitude();
-                tsSum += gpsInfo.getTs();
-                int gpsType = gpsInfo.getGgaType();
-                if (gpsTypeMap.containsKey(gpsType)) {
-                    int next = gpsTypeMap.get(gpsType) + 1;
-                    gpsTypeMap.put(gpsType, next);
-                } else {
-                    gpsTypeMap.put(gpsType, 1);
-                }
-            }
-            maxGPSType = (int) StringUtil.getMaxValue(gpsTypeMap);
-            averageLat = latSum / count;
-            averageLon = lonSum / count;
-            averageTs = tsSum / count;
-        } catch (Exception e) {
-            LogUtil.e(TAG, Thread.currentThread().getName() + ",average:" + Log.getStackTraceString(e));
-            return null;
-        }
-        result.setLatitude(averageLat);
-        result.setLongitude(averageLon);
-        result.setTs(averageTs);
-        result.setGgaType(maxGPSType);
-        return result;
-    }
 
     @Override
     protected void initView() {

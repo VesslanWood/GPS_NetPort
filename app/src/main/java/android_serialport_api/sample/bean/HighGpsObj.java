@@ -1,7 +1,15 @@
 package android_serialport_api.sample.bean;
 
+import android.util.Log;
+
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import android_serialport_api.utils.LogUtil;
+import android_serialport_api.utils.StringUtil;
 
 /**
  * <p>文件描述：高精度GPS对象<p>
@@ -95,6 +103,48 @@ public class HighGpsObj implements Serializable {
                 ", ggaType='" + ggaType + '\'' +
                 ", gpsTime=" + gpsTime +
                 '}';
+    }
+
+    /**
+     * 计算多点的平均值
+     **/
+    public HighGpsObj average(CopyOnWriteArrayList<HighGpsObj> gpsObjs) {
+        HighGpsObj result = new HighGpsObj();
+        int count = gpsObjs.size();
+        double averageLat = 0d;
+        double averageLon = 0d;
+        long averageTs = 0L;
+        int maxGPSType = -1;
+        Map<Integer, Integer> gpsTypeMap = new ConcurrentHashMap<>();
+        try {
+            double latSum = 0d;
+            double lonSum = 0d;
+            long tsSum = 0L;
+            for (HighGpsObj gpsInfo : gpsObjs) {
+                latSum += gpsInfo.getLatitude();
+                lonSum += gpsInfo.getLongitude();
+                tsSum += gpsInfo.getTs();
+                int gpsType = gpsInfo.getGgaType();
+                if (gpsTypeMap.containsKey(gpsType)) {
+                    int next = gpsTypeMap.get(gpsType) + 1;
+                    gpsTypeMap.put(gpsType, next);
+                } else {
+                    gpsTypeMap.put(gpsType, 1);
+                }
+            }
+            maxGPSType = (int) StringUtil.getMaxValue(gpsTypeMap);
+            averageLat = latSum / count;
+            averageLon = lonSum / count;
+            averageTs = tsSum / count;
+        } catch (Exception e) {
+            //LogUtil.e(TAG, Thread.currentThread().getName() + ",average:" + Log.getStackTraceString(e));
+            return null;
+        }
+        result.setLatitude(averageLat);
+        result.setLongitude(averageLon);
+        result.setTs(averageTs);
+        result.setGgaType(maxGPSType);
+        return result;
     }
 
 
