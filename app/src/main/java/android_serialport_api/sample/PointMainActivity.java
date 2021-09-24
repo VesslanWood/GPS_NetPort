@@ -141,7 +141,7 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
                     gpsObjs.clear();
                     judgeListSize();
                     if (gpsObjs.size() > 0) {
-                        HighGpsObj averageHighGpsObj = gpsObjs.get(0).average(gpsObjs);
+                        HighGpsObj averageHighGpsObj = gpsObjs.get(0);
                         if (averageHighGpsObj == null) {
                             showPointFail();
                             return;
@@ -202,7 +202,7 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
      **/
     private void judgeListSize() {
         long startCollectMillTime = System.currentTimeMillis();
-        while (gpsObjs.size() <= 3) {
+        while (gpsObjs.size() <= 0) {
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
@@ -215,7 +215,6 @@ public class PointMainActivity extends NetPortActivity implements View.OnClickLi
             }
         }
     }
-
 
 
     @Override
