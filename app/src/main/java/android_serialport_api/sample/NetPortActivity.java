@@ -40,7 +40,7 @@ public abstract class NetPortActivity extends Activity {
     }
 
     /**
-     * 抽象类单一实例Socket,子类集成 onResume，切勿调用   super.onResume()导致多个Socket实例    *
+     * 抽象类单一实例Socket,子类集成 onResume，切勿调用   super.onResume()导致多个Socket实例  如需调用，可以onResume方法不执行initSocket在需要处初始化既可  *
      **/
     @Override
     protected void onResume() {
